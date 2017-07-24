@@ -15,12 +15,15 @@ The model has two actuation signals
 * steering signal. In range [-1, +1]
 
 The state update equations are as follows:
+
+
       x(i+1) = x(i) + v(i) * cos(psi(i)) * dt
       y(i+1) = y(i) + v(i) * sin(psi(i)) * dt
       psi(i+1) = psi(i) - v(i)*delta(i)/Lf*dt
       v(i+1) = v(i) + a(i) * dt
       cte(i+1) = (f(i) - y(i)) + v(i)*sin(epsi(i))*dt
       epsi(i+1) = (psi(i) - psides(i)) + v(i) * delta(i)/Lf * dt
+
 
 Where the x(i), y(i), psi(i), v(i), cte(i), epsi(i) are elements of the state vector at time i, a(i) and delta(i) - control signals at time step (i), dt - the time step between the states (i+1) and (i), Lf - the length between the front and rear wheel axes
 

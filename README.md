@@ -1,3 +1,57 @@
+# Project Rubric
+
+## Your code should compile.
+* The project is simply build with cmake and make commands
+
+## The Model
+The model I used has the state dimension equal to six
+* x and y coordinates to fix the position of the car in global reference frame
+* psi angle to set the orientation with reference to global coordinate frame
+* CTE value - the cross track error between car position and cubic spline fitted to the goal trajectory key points
+* CTE_psi - the angle between the car global orientation and local tangent line to cubic spline of the goal trajectory
+
+The model has two actuation signals
+* longitudal acceleration signal. In range [-1, + 1]
+* steering signal. In range [-1, +1]
+
+The state update equations are as follows:
+      x(i+1) = x(i) + v(i) * cos(psi(i)) * dt
+      y(i+1) = y(i) + v(i) * sin(psi(i)) * dt
+      psi(i+1) = psi(i) - v(i)*delta(i)/Lf*dt
+      v(i+1) = v(i) + a(i) * dt
+      cte(i+1) = (f(i) - y(i)) + v(i)*sin(epsi(i))*dt
+      epsi(i+1) = (psi(i) - psides(i)) + v(i) * delta(i)/Lf * dt
+
+Where the x(i), y(i), psi(i), v(i), cte(i), epsi(i) are elements of the state vector at time i, a(i) and delta(i) - control signals at time step (i), dt - the time step between the states (i+1) and (i), Lf - the length between the front and rear wheel axes
+
+f(i) = f(x(i)) = a0 + a1 * x(i) + a2*x(i)^2 + a3*x(i)^3 - spline function in vehicle reference frame coordinates
+
+psides(i) = psides(x(i)) = atan(a1 + 2*a2*x(i) + 3*a3*x(i)^2 - tangent line angle to the trajectory spline function in vehicle reference frame.
+
+
+## Time step Length and Elapsed Duration (N & dt)
+My final result is N = 50 and dt = 0.05. I wanted my model to be able to handle trajectory changes up to 2.5 seconds in the future. And I have practical experience in self-driving cars and I know that it is possible to give control signals at 20Hz frequency i.e. every 50ms. That resulted the N = 50 and dt = 0.05.
+
+To debug my algorithm I used less control points and larger dt - for example I used N = 5 and dt = 0.5, but still the same 2.5 seconds.
+
+It is better to have more control points - the system handles sharp turns better.
+
+## Polynomial Fitting and MPC Preprocessing
+
+I used the third degree spline to fit the waypoints. No other preprocess procedures were used.
+
+          coeffs = polyfit(xvals, yvals, 3);
+
+
+
+
+## Model Predictive Control with Latency
+
+The latency of the system is dramatic in sharp turns - the goal trajectory image in vehicle coordinates starts shaking and the car hardly stabilizes along the middle line. To handle the latency I simply used not the first pare of the control signals from the Solve() result but the 4th. It is similar to the latency to be equal to  200ms.
+
+
+
+
 # CarND-Controls-MPC
 Self-Driving Car Engineer Nanodegree Program
 
@@ -57,59 +111,3 @@ is the vehicle starting offset of a straight line (reference). If the MPC implem
 (not too many) it should find and track the reference line.
 2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
 3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.
-
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
-## Code Style
-
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
-
-## Project Instructions and Rubric
-
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
-
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/b1ff3be0-c904-438e-aad3-2b5379f0e0c3/concepts/1a2255a0-e23c-44cf-8d41-39b8a3c8264a)
-for instructions and the project rubric.
-
-## Hints!
-
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
-
-## Call for IDE Profiles Pull Requests
-
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
-
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
